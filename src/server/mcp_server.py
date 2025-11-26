@@ -1,35 +1,11 @@
 from __future__ import annotations
-from typing import List
 
 from mcp.server.fastmcp import FastMCP
 
-from .providers.tool_base import IndicatorType, BaseProvider
-from .providers.API_tools.virustotal import VirusTotalProvider
-from .providers.API_tools.alien_vault_otx import AlienVaultOTXProvider
-from .providers.API_tools.urlscan_io import URLScanIOProvider
-from .providers.API_tools.xforce import XForceProvider
-
-from .providers.DB-tools.abuseipdb import AbuseIPDBProvider
-from .providers.db_tools.bron import BRONProvider
-from .providers.db_tools.nist import NISTProvider
-
+from .providers.tool_base import IndicatorType
+from .providers import get_provider, get_all_providers
 
 mcp = FastMCP("Threat Intel MCP Server", json_response=True)
-
-# --- יצירת אינסטנסים של כל ה-providers ---
-
-PROVIDERS: List[BaseProvider] = [
-    VirusTotalProvider(),
-    AlienVaultOTXProvider(),
-    URLScanIOProvider(),
-    XForceProvider(),
-    AbuseIPDBProvider(),
-    BRONProvider(),
-    NISTProvider(),
-]
-
-
-# --- MCP TOOLS ---
 
 
 @mcp.tool()
@@ -40,12 +16,10 @@ async def query_provider(
 ):
     """
     שאילתה לפרוביידר אחד ספציפי.
+    example: provider_name='virustotal', indicator='8.8.8.8'
     """
-    for provider in PROVIDERS:
-        if provider.name == provider_name:
-            return await provider.query(indicator, indicator_type)
-
-    raise ValueError(f"Unknown provider: {provider_name}")
+    provider = get_provider(provider_name)
+    return await provider.query(indicator, indicator_type)
 
 
 @mcp.tool()
@@ -54,11 +28,10 @@ async def query_all_providers(
     indicator_type: IndicatorType = "ip",
 ):
     """
-    שאילתה לכל הפרוביידרים במקביל ומאחדת את התוצאות.
+    שאילתה לכל הפרוביידרים הרשומים ב-registry ומאחדת את התוצאות.
     """
     results = []
-
-    for provider in PROVIDERS:
+    for provider in get_all_providers():
         try:
             res = await provider.query(indicator, indicator_type)
             results.append(res)
@@ -71,12 +44,8 @@ async def query_all_providers(
                     "error": str(e),
                 }
             )
-
     return results
 
 
 if __name__ == "__main__":
-    # לפיתוח נוח – HTTP עם inspector
     mcp.run(transport="streamable-http")
-    # אח"כ, אם תרצה stdio בשביל Agent/Claude, אפשר להחליף:
-    # mcp.run(transport="stdio")
