@@ -3,7 +3,7 @@ from typing import List
 
 from mcp.server.fastmcp import FastMCP
 
-from .providers.tool-base import IndicatorType, BaseProvider
+from .providers.tool_base import IndicatorType, BaseProvider
 from .providers.API_tools.virustotal import VirusTotalProvider
 from .providers.API_tools.alien_vault_otx import AlienVaultOTXProvider
 from .providers.API_tools.urlscan_io import URLScanIOProvider
