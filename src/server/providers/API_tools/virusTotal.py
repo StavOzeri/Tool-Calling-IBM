@@ -174,7 +174,7 @@ class InvalidIPAddressError(Exception):
 async def Get_an_IP_address_report(IP : str) -> dict[str, Any] | None :
     """
     Get an IP address report from VirusTotal.
-    example: IP=')"""
+    """
 
     if not is_valid_ip(IP):
         raise InvalidIPAddressError(f"The IP address '{IP}' is not a valid address.")
