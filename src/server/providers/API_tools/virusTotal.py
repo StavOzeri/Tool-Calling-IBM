@@ -57,7 +57,7 @@ async def make_get_request_with_params(url : str, params : dict[str , Any]) -> d
     for key, value in params.items():
         url += f"{key}={value}&"
 
-    url = url[:-1]  # remove last &
+    url = url[:-1]  
     async with httpx.AsyncClient() as client:
         try:
             resp = await client.get(url, headers=headers, timeout=30.0)
@@ -166,19 +166,8 @@ async def make_post_request_form(url: str, form: dict[str, Any]) -> dict[str, An
 # tools    
 
 #IP adresses
-
 class InvalidIPAddressError(Exception):
     pass
-
-
-# Validate IP address
-def is_valid_ip(ip: str) -> bool:
-    try:
-        ipaddress.ip_address(ip)
-        return True
-    except ValueError:
-        return False
-
 
 
 @mcp.tool()
@@ -359,15 +348,213 @@ async def Add_a_vote_to_an_IP_address(IP: str, vote: dict[str, Any]) -> dict[str
     return data
 
 
+#Domains & Resolutions
+class InvalidDomainError(Exception):
+    pass
+
+@mcp.tool()
+async def Get_a_domain_report(domain: str) -> dict[str, Any] | None:
+    """
+    Get a domain report from VirusTotal.
+    example: domain='example.com'
+    """
+    if not is_valid_domain(domain):
+        raise InvalidDomainError(f"The domain '{domain}' is not a valid domain.")
+
+    url = f"{BASE_URL}/domains/{domain}"
+    data = await make_get_request(url)
+
+    if data["error"] is not None:
+        logging.error(f"Error in Domain report: {data['error']}")
+    logging.info("return: {data}")
+    return data
+
+
+@mcp.tool()
+async def Request_an_domain_rescan(domain: str) -> dict[str, Any] | None:
+    """
+    Request a domain rescan from VirusTotal.
+    example: domain='example.com'
+    """
+    if not is_valid_domain(domain):
+        raise InvalidDomainError(f"The domain '{domain}' is not a valid domain.")
+    
+    url = f"{BASE_URL}/domains/{domain}/analyse"
+    data = await make_post_request(url)
+
+    if data["error"] is not None:
+        logging.error(f"Error in Domain report: {data['error']}")
+    logging.info("return: {data}")
+    return data
+
+
+@mcp.tool()
+async def Get_comments_on_a_domain(domain: str, limit: int | None = 10, cursor: str | None = None) -> dict[str, Any] | None:
+    """
+    Get comments on a domain from VirusTotal.
+    example: domain='example.com'
+    """
+    if not is_valid_domain(domain):
+        raise InvalidDomainError(f"The domain '{domain}' is not a valid domain.")
+    
+    params = {"limit": limit}
+
+    if cursor:
+        params["cursor"] = cursor
+
+    url = f"{BASE_URL}/domains/{domain}/comments"
+    data = await make_get_request(url, params)
+
+    if data["error"] is not None:
+        logging.error(f"Error in Domain report: {data['error']}")
+    logging.info("return: {data}")
+    return data
+
+
+@mcp.tool()
+async def Add_a_comment_to_a_domain(domain: str, comment: str) -> dict[str, Any] | None:
+    """
+    Add a comment to a domain on VirusTotal.
+    example: domain='example.com', comment='This is a test comment.'
+    """
+    if not is_valid_domain(domain):
+        raise InvalidDomainError(f"The domain '{domain}' is not a valid domain.")
+    url = f"{BASE_URL}/domains/{domain}/comments"
+    
+    payload = {
+        "data": {
+            "type": "comment",
+            "attributes": {
+                "text": comment
+            }
+        }
+    }
+
+    data = await make_post_request(url, payload)
+
+    if data["error"] is not None:
+        logging.error(f"Error in Domain report: {data['error']}")
+    logging.info("return: {data}")
+    return data
+
+
+@mcp.tool()
+async def Get_objects_related_to_a_domain(domain: str, relationship: str, limit: int | None = 10, cursor: str | None = None) -> dict[str, Any] | None:
+    """
+    Get objects related to a domain from VirusTotal.
+    example: domain='example.com'
+    """
+    if not is_valid_domain(domain):
+        raise InvalidDomainError(f"The domain '{domain}' is not a valid domain.")
+    
+    params = {"limit": limit}
+
+    if cursor:
+        params["cursor"] = cursor
+    
+    url = f"{BASE_URL}/domains/{domain}/{relationship}"
+    data = await make_get_request(url, params)
+
+    if data["error"] is not None:
+        logging.error(f"Error in Domain report: {data['error']}")
+    logging.info("return: {data}")
+    return data
+
+
+@mcp.tool()
+async def Get_object_descriptors_related_to_a_domain(domain: str, relationship: str, limit: int | None = 10, cursor: str | None = None) -> dict[str, Any] | None:
+    """
+    Get object descriptors related to a domain from VirusTotal.
+    example: domain='example.com'
+    """
+    if not is_valid_domain(domain):
+        raise InvalidDomainError(f"The domain '{domain}' is not a valid domain.")
+    
+    params = {"limit": limit}
+
+    if cursor:
+        params["cursor"] = cursor
+
+    url = f"{BASE_URL}/domains/{domain}/relationships/{relationship}"
+    data = await make_get_request(url, params)
+
+    if data["error"] is not None:
+        logging.error(f"Error in Domain report: {data['error']}")
+    logging.info("return: {data}")
+    return data
+
+
+@mcp.tool()
+async def Get_a_DNS_resolution_object(domain: str) -> dict[str, Any] | None:
+    """
+    Get a DNS resolution object from VirusTotal.
+    example: domain='example.com'
+    """
+    if not is_valid_domain(domain):
+        raise InvalidDomainError(f"The domain '{domain}' is not a valid domain.")
+    
+    url = f"{BASE_URL}/resolutions/{domain}"
+    data = await make_get_request(url)
+
+    if data["error"] is not None:
+        logging.error(f"Error in Domain report: {data['error']}")
+    logging.info("return: {data}")
+    return data
+
+
+@mcp.tool()
+async def Get_votes_on_a_domain(domain: str) -> dict[str, Any] | None:
+    """
+    Get votes on a domain from VirusTotal.
+    example: domain='example.com'
+    """
+    if not is_valid_domain(domain):
+        raise InvalidDomainError(f"The domain '{domain}' is not a valid domain.")
+    
+    url = f"{BASE_URL}/domains/{domain}/votes"
+    data = await make_get_request(url)
+
+    if data["error"] is not None:
+        logging.error(f"Error in Domain report: {data['error']}")
+    logging.info("return: {data}")
+    return data
+
+
+@mcp.tool()
+async def Add_a_vote_to_a_domain(domain: str, verdict : str) -> dict[str, Any] | None:
+    """
+    Add a vote to a domain on VirusTotal.
+    example: domain='example.com', verdict='malicious'
+    """
+    if not is_valid_domain(domain):
+        raise InvalidDomainError(f"The domain '{domain}' is not a valid domain.")
+    
+    url = f"{BASE_URL}/domains/{domain}/votes"
+    
+    payload = {
+        "data": {
+            "type": "vote",
+            "attributes": {
+                "verdict": verdict
+            }
+        }
+    }
+
+    data = await make_post_request(url, payload)
+
+    if data["error"] is not None:
+        logging.error(f"Error in Domain report: {data['error']}")
+    logging.info("return: {data}")
+    return data
+
+
 
 #Files
-
 @mcp.tool()
 async def Upload_a_file(file_path: str, password: str | None = None) -> dict[str, Any] | None:
     """
     Upload and scan a file using VirusTotal.
     """
-
     url = f"{BASE_URL}/files"
 
     body = {
@@ -499,7 +686,6 @@ async def Get_objects_related_to_a_file(file_id: str, relationship: str, limit: 
         logging.error(f"Error in VT File report: {data['error']}")
     logging.info("return: {data}")
     return data
-
 
 
 
@@ -700,18 +886,11 @@ async def Get_a_detailed_HTML_behaviour_report(sandbox_id: str) -> dict[str, Any
     logging.info("return: {data}")
     return data
 
-#URLs
 
+
+#URLs
 class InvalidURLError(Exception):
     pass
-
-# Validate URL
-def is_valid_url(url: str) -> bool:
-    try:
-        result = urlparse(url)
-        return all([result.scheme in ("http", "https"), result.netloc != ""])
-    except Exception:
-        return False
 
 
 @mcp.tool()
@@ -880,10 +1059,6 @@ async def Add_a_vote_on_a_URL(url_id: str, verdict: str) -> dict[str, Any] | Non
         logging.error(f"Error adding VT URL vote: {data['error']}")
     logging.info("return: {data}")
     return data
-
-
-
-
 
 
 
